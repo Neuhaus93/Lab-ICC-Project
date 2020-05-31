@@ -1,0 +1,8 @@
+	
+	                 PROJETO (Da faculdade)
+	Criar um programa de gerência de um comercio, 
+		com as seguintes funcionalidades:
+
+	- Cadastro de usuário;
+	- Cadastro de produto;
+	- Controle de entrada e saída (fluxo de produtos)
