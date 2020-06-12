@@ -3,10 +3,12 @@
 #include <math.h>
 #include <string.h>
 #include <conio.h>
+#include <windows.h>
 #define NUMACOES 4
 
 
 int showMenu();
+int menuFluxo();
 void cadastroUsuario();
 void cadastroProduto();
 void fluxoProduto();
@@ -48,15 +50,126 @@ void main() {
 }
 
 void fluxoProduto() {
-    printf("Fluxo de produto!");
+    FILE *produtos, *caixa;
+    char produto[123];
+    int acaoFluxo = 3;
+
+    printf("====================\n\n");
+    printf("Registrar fluxo de produto!\n\n");
+    printf("====================\n\n");
+
+    if((produtos = fopen("produtos.txt", "r+"))==NULL) {
+        printf("\nErro abrindo o arquivo 'produtos.txt'.\n");
+        return;
+    }
+
+    if((caixa = fopen("caixa.txt", "r+"))==NULL) {
+        printf("\nErro abrindo o arquivo 'caixa.txt'.\n");
+        return;
+    }
+
+    printf("Produtos em estoque:\n\n");
+    while( fgets (produto, 123, produtos) != NULL ) {
+        printf("%s", produto);
+    }
+    printf("\n====================\n\n");
+
+    fflush(stdin);
+    acaoFluxo = menuFluxo();
+    printf("O valor de 'acaoFluxo e: %d\n", acaoFluxo);
+    Sleep(5);
+
+    while (acaoFluxo != 3) {
+
+        switch(acaoFluxo) {
+            case 1:
+                printf("Comprando algum produto!\n\n");
+                break;
+
+            case 2:
+                printf("Vendendo algum produto!\n\n");
+                break;
+
+            default:
+                printf("Erro no programa!\n\n");
+                return;
+        }
+
+        acaoFluxo = menuFluxo();
+    }
+
+    // Fechando os arquivos .txt abertos (caixa.txt && produtos.txt)
+    fclose(caixa);
+    fclose(produtos);
+
+//    pause();
+    system("cls");
 }
 
+int menuFluxo() {
+    int acao, aux, isValid;
+    char term;
+
+    printf("Escolha a acao desejada:\n");
+    printf("1. Compra de produto\n");
+    printf("2. Venda de produto\n");
+    printf("3. Voltar ao menu inicial\n\n");
+
+    printf("-> Digite o numero correspondente a acao: ");
+    while (isValid != 2) {
+        isValid = 2;
+        fflush(stdin);
+        aux = scanf("%d%c", &acao, &term);
+        if (aux != 2 || term != '\n') {
+            printf("\nO valor digitado nao corresponde a um inteiro.\n");
+            printf("-> Digite novamente a acao desejada: ");
+            isValid--;
+        } else if (acao < 1 || acao > 3) {
+            printf("\nNumero digitado nao corresponde a uma acao existente.\n");
+            printf("-> Digite novamente a acao desejada: ");
+            isValid--;
+        }
+    }
+
+    system("cls");
+    return acao;
+}
+
+int showMenu() {
+    int acao, aux, isValid;
+    char term;
+
+    printf("Escolha a acao desejada:\n");
+    printf("1. Cadastro de usuario\n");
+    printf("2. Cadastro de produto\n");
+    printf("3. Adicionar fluxo de produtos\n");
+    printf("4. Sair do programa\n\n");
+
+    printf("-> Digite o numero correspondente a acao: ");
+    while (isValid != 2) {
+        isValid = 2;
+        fflush(stdin);
+        aux = scanf("%d%c", &acao, &term);
+        if (aux != 2 || term != '\n') {
+            printf("\nO valor digitado nao corresponde a um inteiro.\n");
+            printf("-> Digite novamente a acao desejada: ");
+            isValid--;
+        } else if (acao < 1 || acao > NUMACOES) {
+            printf("\nNumero digitado nao corresponde a uma acao existente.\n");
+            printf("-> Digite novamente a acao desejada: ");
+            isValid--;
+        }
+    }
+
+    system("cls");
+    return acao;
+}
 
 void cadastroProduto() {
     FILE *arq;
-    char produto[123], novoProdutoNome[60], novoProduto[123];
-    char novoProdutoPreco[60];
-    int ehNovoProduto = 1, counter = 0;
+    char produto[123], novoProduto[123];
+    char novoProdutoPreco[60], novoProdutoNome[60];
+    int ehNovoProduto = 1;
 
     printf("====================\n\n");
     printf("Cadastro de produto!\n\n");
@@ -73,9 +186,9 @@ void cadastroProduto() {
     scanf("%s", &novoProdutoPreco);
 
     strcpy(novoProduto, novoProdutoNome);
-    strcat(novoProduto, " - ");
+    strcat(novoProduto, " | R$");
     strcat(novoProduto, novoProdutoPreco);
-    strcat(novoProduto, " - ");
+    strcat(novoProduto, " | ");
     strcat(novoProduto, "0");
     strcat(novoProduto, "\n");
 
@@ -97,17 +210,15 @@ void cadastroProduto() {
     }
 
     fclose(arq);
-
     system("cls");
-
 }
 
 void cadastroUsuario() {
 
     FILE *arq;
-    char usuario[123], novoUsuarioNome[60];
-    char novoUsuarioTelefone[60], novoUsuario[123];
-    int isNewUser = 1, counter = 0;
+    char usuario[123], novoUsuario[123];
+    char novoUsuarioTelefone[60], novoUsuarioNome[60];
+    int isNewUser = 1;
 
     printf("====================\n\n");
     printf("Cadastro de usuario!\n\n");
@@ -146,42 +257,7 @@ void cadastroUsuario() {
     }
 
     fclose(arq);
-
     system("cls");
-}
-
-int showMenu() {
-
-    int acao, aux;
-    char term;
-
-    printf("Escolha a acao desejada:\n");
-    printf("1. Cadastro de usuario\n");
-    printf("2. Cadastro de produto\n");
-    printf("3. Adicionar fluxo de produtos\n");
-    printf("4. Sair do programa\n\n");
-
-    printf("Digite o numero correspondente a acao: ");
-    aux = scanf("%d%c", &acao, &term);
-
-    while(aux != 2 || term != '\n') {
-        printf("\nO valor digitado nao corresponde a um inteiro.\n");
-        printf("Digite novamente a acao desejada: ");
-        fflush(stdin);
-        aux = scanf("%d%c", &acao, &term);
-
-
-        while (acao < 1 || acao > NUMACOES) {
-            printf("\nNumero digitado nao corresponde a uma acao existente.\n");
-            printf("Digite novamente a acao desejada: ");
-            fflush(stdin);
-            aux = scanf("%d%c", &acao, &term);
-        }
-
-    }
-
-    system("cls");
-    return acao;
 }
 
 void pause () {
