@@ -1,4 +1,0 @@
-Saldo
-5000
-
-Transacoes
