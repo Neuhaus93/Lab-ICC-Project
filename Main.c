@@ -5,6 +5,9 @@
 #include <conio.h>
 #include <windows.h>
 #define NUMACOES 4
+#define TRANSACTION_SUCESS 0
+#define TRANSACTION_FAILURE 1
+#define MAX 256
 
 void registerNewUser();
 void registerNewItem();
@@ -13,6 +16,7 @@ int printFlowMenu();
 int printListedItems(bool);
 void stockFlow();
 void buyProduct();
+int transaction(double);
 int actionValidate(int, int);
 void printHeader(char *);
 void pause();
@@ -20,6 +24,7 @@ void pause();
 void main()
 {
   int action = printMainMenu();
+  system("cls");
 
   while (action != 4)
   {
@@ -192,6 +197,8 @@ void buyProduct()
 {
   FILE *stock;
   int action, count, indexCounter = 1, itemIndex, costIndex;
+  int itemQuant;
+  double totalCost = 10.0;
   char aux[15], item[15], cost[5];
 
   system("cls");
@@ -224,10 +231,98 @@ void buyProduct()
     indexCounter++;
   }
 
-  printf("Quantas unidades de %s (%s/un) voce deseja comprar?", item, cost);
-  Sleep(4000);
+  printf("\n\nDigite o numero de unidades de %s (%s/un) voce deseja comprar: ", item, cost);
+  scanf("%d", &itemQuant);
+
+  //TODO: Calcular o custo total
+
+  printf("O total ficou R$%0.2f.\n\n", totalCost);
+  printf(" 1. Finalizar compra\n");
+  printf(" 2. Alterar quantidade\n");
+  printf(" 3. Voltar ao menu anterior\n");
+
+  printf("\n====================\n\n");
+
+  action = actionValidate(3, 1);
+
+  transaction(-totalCost);
+  Sleep(3000);
+
+  // printf("\nAction: %d", action);
+
+  // Sleep(4000);
 
   fclose(stock);
+}
+
+int transaction(double value)
+{
+  FILE *cash_register, *fptr2;
+  char lineContent[30], temp[] = "temp.txt", str[MAX];
+  char *balanceStr;
+  int line = 0, lno = 2, linectr = 0;
+  double balance;
+
+  if ((cash_register = fopen("cash_register.txt", "r")) == NULL)
+  {
+    printf("\nErro abrindo o arquivo 'cash_register.txt'.\n");
+    return TRANSACTION_FAILURE;
+  }
+
+  if ((fptr2 = fopen(temp, "w")) == NULL)
+  {
+    printf("\nErro abrir um arquivo temporario para escrever!!'.\n");
+    return TRANSACTION_FAILURE;
+  }
+
+  while (line <= 1)
+  {
+    fgets(lineContent, 123, cash_register);
+    line++;
+  }
+
+  balanceStr = malloc(strlen(lineContent) + 1);
+
+  balance = atof(lineContent);
+  if (balance + value > 0.0)
+  {
+    balance += value;
+  }
+  else
+  {
+    printf("Sem saldo suficiente no caixa para a transacao!");
+    Sleep(1000);
+    return TRANSACTION_FAILURE;
+  }
+
+  rewind(cash_register);
+
+  snprintf(balanceStr, sizeof(balanceStr), "%.2f", balance);
+
+  while (!feof(cash_register))
+  {
+    strcpy(str, "\0");
+    fgets(str, MAX, cash_register);
+    if (!feof(cash_register))
+    {
+      linectr++;
+      if (linectr != lno)
+      {
+        fprintf(fptr2, "%s", str);
+      }
+      else
+      {
+        fprintf(fptr2, "%s\n", balanceStr);
+      }
+    }
+  }
+  fclose(cash_register);
+  fclose(fptr2);
+  remove("cash_register.txt");
+  rename(temp, "cash_register.txt");
+
+  free(balanceStr);
+  return TRANSACTION_SUCESS;
 }
 
 /**
