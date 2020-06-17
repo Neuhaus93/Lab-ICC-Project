@@ -13,13 +13,29 @@ void registerNewUser();
 void registerNewItem();
 int printMainMenu();
 int printFlowMenu();
+int printBuyMenu(float);
+int printSellMenu(float);
 int printListedItems(bool);
+double convertCost(char *, int);
 void stockFlow();
 void buyProduct();
+void sellProduct();
 int transaction(double);
 int actionValidate(int, int);
 void printHeader(char *);
 void pause();
+
+struct user
+{
+  char nome[60];
+  char telefone[60];
+};
+
+struct item
+{
+  char nome[60];
+  char preco[60];
+};
 
 void main()
 {
@@ -61,8 +77,8 @@ void main()
 void registerNewUser()
 {
   FILE *users;
+  struct user newUser;
   char usuario[123], novoUsuario[123];
-  char novoUsuarioTelefone[60], novoUsuarioNome[60];
   int isNewUser = 1;
 
   printHeader("Cadastro de usuario!");
@@ -74,13 +90,13 @@ void registerNewUser()
   }
 
   printf("Digite o nome do usuario: ");
-  scanf("%s", &novoUsuarioNome);
-  printf("Digite o telefone de %s: ", novoUsuarioNome);
-  scanf("%s", &novoUsuarioTelefone);
+  gets(newUser.nome);
+  printf("Digite o telefone de %s: ", newUser.nome);
+  gets(newUser.telefone);
 
-  strcpy(novoUsuario, novoUsuarioNome);
+  strcpy(novoUsuario, newUser.nome);
   strcat(novoUsuario, " - ");
-  strcat(novoUsuario, novoUsuarioTelefone);
+  strcat(novoUsuario, newUser.telefone);
   strcat(novoUsuario, "\n");
 
   while (fgets(usuario, 123, users) != NULL)
@@ -113,8 +129,8 @@ void registerNewUser()
 void registerNewItem()
 {
   FILE *stock;
+  struct item newItem;
   char produto[123], novoProduto[123];
-  char novoProdutoPreco[60], novoProdutoNome[60];
   int ehNovoProduto = 1;
 
   printHeader("Cadastro de produto!");
@@ -126,15 +142,15 @@ void registerNewItem()
   }
 
   printf("Digite o nome do produto: ");
-  scanf("%s", &novoProdutoNome);
+  gets(newItem.nome);
   printf("Digite o preco do produto: ");
-  scanf("%s", &novoProdutoPreco);
+  gets(newItem.preco);
 
-  strcpy(novoProduto, novoProdutoNome);
+  strcpy(novoProduto, newItem.nome);
   strcat(novoProduto, " | R$");
-  strcat(novoProduto, novoProdutoPreco);
-  strcat(novoProduto, " | ");
-  strcat(novoProduto, "0");
+  strcat(novoProduto, newItem.preco);
+  // strcat(novoProduto, " | ");
+  // strcat(novoProduto, "0");
   strcat(novoProduto, "\n");
 
   while (fgets(produto, 123, stock) != NULL)
@@ -183,7 +199,7 @@ void stockFlow()
       break;
 
     case 2:
-      printf("Vendendo algum produto!\n\n");
+      sellProduct();
       break;
 
     default:
@@ -196,10 +212,10 @@ void stockFlow()
 void buyProduct()
 {
   FILE *stock;
-  int action, count, indexCounter = 1, itemIndex, costIndex;
-  int itemQuant;
-  double totalCost = 10.0;
-  char aux[15], item[15], cost[5];
+  int action, count, indexCounter = 1, itemIndex, costIndex, quantIndex;
+  int buyQuant, quantInStock;
+  double totalCost;
+  char aux[15], item[15], costStr[10], quantStr[10];
 
   system("cls");
   printHeader("Registrar compra de produto!");
@@ -210,14 +226,15 @@ void buyProduct()
   if (count == action)
     return;
 
+  itemIndex = (3 + action * 3);
+  costIndex = itemIndex + 2;
+  quantIndex = itemIndex + 4;
+
   if ((stock = fopen("stock.txt", "r")) == NULL)
   {
     printf("\nErro abrindo o arquivo 'stock.txt'.\n");
     return;
   }
-
-  itemIndex = (3 + action * 5);
-  costIndex = itemIndex + 2;
   while (feof(stock) == 0)
   {
     fscanf(stock, "%s", aux);
@@ -225,34 +242,121 @@ void buyProduct()
       strcpy(item, aux);
     if (indexCounter == costIndex)
     {
-      strcpy(cost, aux);
+      strcpy(costStr, aux);
+    }
+    if (indexCounter == costIndex)
+    {
+      strcpy(quantStr, aux);
       break;
     }
     indexCounter++;
   }
-
-  printf("\n\nDigite o numero de unidades de %s (%s/un) voce deseja comprar: ", item, cost);
-  scanf("%d", &itemQuant);
-
-  //TODO: Calcular o custo total
-
-  printf("O total ficou R$%0.2f.\n\n", totalCost);
-  printf(" 1. Finalizar compra\n");
-  printf(" 2. Alterar quantidade\n");
-  printf(" 3. Voltar ao menu anterior\n");
-
-  printf("\n====================\n\n");
-
-  action = actionValidate(3, 1);
-
-  transaction(-totalCost);
-  Sleep(3000);
-
-  // printf("\nAction: %d", action);
-
-  // Sleep(4000);
-
   fclose(stock);
+
+  quantInStock = atof(quantStr);
+
+  printf("\n\nDigite o numero de unidades de %s (%s/un) voce deseja comprar: ", item, costStr);
+  scanf("%d", &buyQuant);
+  totalCost = convertCost(costStr, strlen(costStr)) * buyQuant;
+
+  action = printBuyMenu(totalCost);
+
+  if (action == 2)
+    return;
+
+  if (transaction(-totalCost) == TRANSACTION_SUCESS)
+  {
+    printf("\nCompra realizada com suceso!");
+    Sleep(1250);
+  }
+  else
+  {
+    printf("\nSem saldo suficiente no caixa para a transacao!");
+    Sleep(1250);
+  }
+}
+
+void sellProduct()
+{
+  FILE *stock;
+  int action, count, indexCounter = 1, itemIndex, costIndex, quantIndex;
+  int sellQuant, quantInStock;
+  double totalCost;
+  char aux[15], item[15], costStr[10], quantStr[10];
+
+  system("cls");
+  printHeader("Registrar venda de produto!");
+  count = printListedItems(true);
+  action = actionValidate(count, 2);
+
+  // Go back to the previous menu
+  if (count == action)
+    return;
+
+  itemIndex = (3 + action * 3);
+  costIndex = itemIndex + 2;
+  quantIndex = itemIndex + 4;
+
+  if ((stock = fopen("stock.txt", "r")) == NULL)
+  {
+    printf("\nErro abrindo o arquivo 'stock.txt'.\n");
+    return;
+  }
+  while (feof(stock) == 0)
+  {
+    fscanf(stock, "%s", aux);
+    if (indexCounter == itemIndex)
+      strcpy(item, aux);
+    if (indexCounter == costIndex)
+    {
+      strcpy(costStr, aux);
+    }
+    if (indexCounter == costIndex)
+    {
+      strcpy(quantStr, aux);
+      break;
+    }
+    indexCounter++;
+  }
+  fclose(stock);
+
+  quantInStock = atof(quantStr);
+
+  printf("\n\nDigite o numero de unidades de %s (%s/un) voce deseja vender: ", item, costStr);
+  scanf("%d", &sellQuant);
+  totalCost = convertCost(costStr, strlen(costStr)) * sellQuant;
+
+  action = printSellMenu(totalCost);
+
+  if (action == 2)
+    return;
+
+  if (transaction(totalCost) == TRANSACTION_SUCESS)
+  {
+    printf("\nVenda realizada com suceso!");
+    Sleep(1250);
+  }
+  else
+  {
+    printf("\nOcorreu um erro na venda do produto!");
+    Sleep(1250);
+  }
+}
+
+/**
+ *  Converts the cost string from the stock.txt file to a double. 
+ * 
+ *  @param  {char[]}    costStr 
+ *  @param  {int}       strSize Length of the costStr
+ * 
+ *  @return {double}    Cost converted to a double 
+ */
+double convertCost(char *costStr, int strSize)
+{
+  char aux[10];
+
+  strncpy(aux, costStr + 2, strSize - 2);
+  return atof(aux);
 }
 
 int transaction(double value)
@@ -290,8 +394,6 @@ int transaction(double value)
   }
   else
   {
-    printf("Sem saldo suficiente no caixa para a transacao!");
-    Sleep(1000);
     return TRANSACTION_FAILURE;
   }
 
@@ -360,6 +462,36 @@ int printFlowMenu()
   printf(" 3. Voltar ao menu inicial\n\n");
 
   action = actionValidate(3, 1);
+
+  return action;
+}
+
+int printBuyMenu(float totalCost)
+{
+  int action;
+
+  printf("\nO total ficou R$%0.2f.\n\n", totalCost);
+  printf(" 1. Finalizar compra\n");
+  printf(" 2. Cancelar compra\n");
+
+  printf("\n====================\n\n");
+
+  action = actionValidate(2, 1);
+
+  return action;
+}
+
+int printSellMenu(float totalCost)
+{
+  int action;
+
+  printf("\nO total ficou R$%0.2f.\n\n", totalCost);
+  printf(" 1. Finalizar venda\n");
+  printf(" 2. Cancelar venda\n");
+
+  printf("\n====================\n\n");
+
+  action = actionValidate(2, 1);
 
   return action;
 }
