@@ -5,9 +5,14 @@
 #include <conio.h>
 #include <windows.h>
 #define NUMACOES 4
-#define TRANSACTION_SUCESS 0
+#define TRANSACTION_SUCCESS 0
 #define TRANSACTION_FAILURE 1
 #define MAX 256
+
+/**
+ *  Aluno: Lucas Arendt Neuhaus
+ *  nUSP: 8552501
+ */
 
 void registerNewUser();
 void registerNewItem();
@@ -211,11 +216,11 @@ void stockFlow()
 
 void buyProduct()
 {
-  FILE *stock;
-  int action, count, indexCounter = 1, itemIndex, costIndex, quantIndex;
+  FILE *stock, *cash_register;
+  int action, count, indexCounter = 1, itemIndex, costIndex, quantIndex, balanceIndex = 2;
   int buyQuant, quantInStock;
   double totalCost;
-  char aux[15], item[15], costStr[10], quantStr[10];
+  char aux[15], item[15], costStr[10], quantStr[10], balanceStr[10];
 
   system("cls");
   printHeader("Registrar compra de produto!");
@@ -235,6 +240,11 @@ void buyProduct()
     printf("\nErro abrindo o arquivo 'stock.txt'.\n");
     return;
   }
+  if ((cash_register = fopen("cash_register.txt", "r")) == NULL)
+  {
+    printf("\nErro abrindo o arquivo 'cash_register.txt'.\n");
+    return;
+  }
   while (feof(stock) == 0)
   {
     fscanf(stock, "%s", aux);
@@ -251,11 +261,21 @@ void buyProduct()
     }
     indexCounter++;
   }
+  indexCounter = 0;
+  while (feof(cash_register) == 0)
+  {
+    fscanf(cash_register, "%s", aux);
+    if (indexCounter == balanceIndex)
+      strcpy(balanceStr, aux);
+    indexCounter++;
+  }
   fclose(stock);
+  fclose(cash_register);
 
   quantInStock = atof(quantStr);
 
-  printf("\n\nDigite o numero de unidades de %s (%s/un) voce deseja comprar: ", item, costStr);
+  printf("\n\nSaldo atual: R$%s", balanceStr);
+  printf("\nDigite o numero de unidades de %s (%s/un) voce deseja comprar: ", item, costStr);
   scanf("%d", &buyQuant);
   totalCost = convertCost(costStr, strlen(costStr)) * buyQuant;
 
@@ -264,7 +284,7 @@ void buyProduct()
   if (action == 2)
     return;
 
-  if (transaction(-totalCost) == TRANSACTION_SUCESS)
+  if (transaction(-totalCost) == TRANSACTION_SUCCESS)
   {
     printf("\nCompra realizada com suceso!");
     Sleep(1250);
@@ -331,7 +351,7 @@ void sellProduct()
   if (action == 2)
     return;
 
-  if (transaction(totalCost) == TRANSACTION_SUCESS)
+  if (transaction(totalCost) == TRANSACTION_SUCCESS)
   {
     printf("\nVenda realizada com suceso!");
     Sleep(1250);
@@ -359,6 +379,14 @@ double convertCost(char *costStr, int strSize)
   return atof(aux);
 }
 
+/**
+ *  Completes a buy or sell transaction, adding or substracting the value (if possible) out of the cash_register.txt file
+ * 
+ * @param {double}  value The transaction value
+ * 
+ * @return {int}    Returns the constant TRANSACTION_FAILURE if an error ocurred, or if not enough money in the cash_register, or
+ *                    returns the constant TRANSACTION_SUCESS if it was a success.
+ */
 int transaction(double value)
 {
   FILE *cash_register, *fptr2;
@@ -424,7 +452,7 @@ int transaction(double value)
   rename(temp, "cash_register.txt");
 
   free(balanceStr);
-  return TRANSACTION_SUCESS;
+  return TRANSACTION_SUCCESS;
 }
 
 /**
@@ -450,7 +478,7 @@ int printMainMenu()
 }
 
 /**
- *  Print the flow menu, shown when the user selects the action (3) in the main menu.
+ *  Prints the flow menu, shown when the user selects the action (3) in the main menu.
  */
 int printFlowMenu()
 {
@@ -466,6 +494,9 @@ int printFlowMenu()
   return action;
 }
 
+/**
+ *  Prints the buy menu.
+ */
 int printBuyMenu(float totalCost)
 {
   int action;
@@ -481,6 +512,9 @@ int printBuyMenu(float totalCost)
   return action;
 }
 
+/**
+ *  Prints the sell menu.
+ */
 int printSellMenu(float totalCost)
 {
   int action;
